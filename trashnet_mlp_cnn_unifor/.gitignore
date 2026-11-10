@@ -1,0 +1,20 @@
+# Dataset: baixar do repositório oficial; não subir ao GitHub.
+data/dataset-resized/
+data/dataset-resized.zip
+data/*.zip
+
+# Pesos e checkpoints podem ser grandes; guardar no Google Drive.
+outputs/modelos/*.keras
+outputs/modelos/*.h5
+outputs/checkpoints/**
+!outputs/checkpoints/.gitkeep
+
+# Ambientes, cache e credenciais.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.ipynb_checkpoints/
+.DS_Store
+.env

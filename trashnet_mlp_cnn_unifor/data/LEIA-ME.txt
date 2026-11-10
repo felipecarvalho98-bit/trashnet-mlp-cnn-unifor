@@ -1,0 +1,4 @@
+O dataset não é incluído neste repositório para evitar duplicar os 42,8 MB do ZIP original.
+Execute `python -m src.prepare_data` para baixar e validar automaticamente `dataset-resized.zip`.
+Também é possível colocar manualmente o arquivo em `data/dataset-resized.zip`.
+Fonte: https://huggingface.co/datasets/garythung/trashnet
