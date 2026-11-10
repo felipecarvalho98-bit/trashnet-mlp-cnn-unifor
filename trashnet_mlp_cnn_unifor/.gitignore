@@ -1,7 +1,7 @@
-# Dataset: baixar do repositório oficial; não subir ao GitHub.
+# O ZIP oficial é versionado; ignorar somente as imagens extraídas.
 data/dataset-resized/
 
-# Pesos e checkpoints podem ser grandes; guardar no Google Drive.
+# Modelos e checkpoints são grandes; baixar backups do Colab e armazenar fora do Git.
 outputs/modelos/*.keras
 outputs/modelos/*.h5
 outputs/checkpoints/**
