@@ -38,27 +38,24 @@ git push
 
 Antes de cada commit, confira `git status`. Não envie ZIP do dataset, pasta de imagens, modelos `.keras`, checkpoints, tokens ou credenciais. O `.gitignore` já exclui esses arquivos.
 
-## Parte 2 — Preparar o notebook no Google Colab
+## Parte 2 — Preparar o notebook no Google Colab (sem Google Drive)
 
-1. Abra `notebooks/00_Execucao_Colab.ipynb` no Colab.
-2. No menu **Ambiente de execução → Alterar o tipo de ambiente de execução**, selecione **GPU** e salve.
-3. Na primeira célula, altere `REPO_URL` para a URL HTTPS real do seu repositório.
-4. Execute a célula de montagem do Google Drive e clone o repositório dentro da pasta `MyDrive/IA_UNIFOR/`.
-5. Execute as células de dependências e GPU. Confirme que `GPUs:` mostra pelo menos um dispositivo e que a multiplicação de matrizes informa `/device:GPU:0`. Se não aparecer, volte à configuração do runtime, selecione GPU e reinicie.
-6. Execute a célula de análise exploratória. O código baixa o arquivo oficial, confere o hash e exige as 2.527 imagens. Confira as contagens e as Figuras 1–4.
-7. Execute primeiro E3 como teste de fluxo completo. Ele pode levar tempo; não é um teste de uma única época.
-8. Quando E3 terminar e a configuração estiver registrada, execute `python -m src.train --all --skip-existing` para concluir os modelos restantes sem refazer E3.
-9. Se o Colab desconectar, reabra o mesmo notebook, monte o Drive, use o mesmo caminho de projeto e execute novamente a célula de treinamento. Os checkpoints por época ficam no Drive. Não apague `outputs/checkpoints/` antes de concluir o treino.
-10. Só depois de existirem os seis `.keras` e os seis arquivos de configuração, execute a avaliação.
-11. Baixe/revise as três tabelas e as Figuras 5–8. Salve no repositório os arquivos pequenos gerados. Mantenha modelos e checkpoints no Drive.
+1. Abra o notebook atualizado: [00_Execucao_Colab.ipynb](https://colab.research.google.com/github/felipecarvalho98-bit/trashnet-mlp-cnn-unifor/blob/main/trashnet_mlp_cnn_unifor/notebooks/00_Execucao_Colab.ipynb).
+2. Em **Ambiente de execução → Alterar o tipo de ambiente de execução**, selecione **GPU** e salve. A GPU disponível depende da cota e dos recursos do Colab.
+3. Execute todas as células na ordem, de cima para baixo. A primeira célula clona o repositório público para `/content/trashnet-mlp-cnn-unifor`, define a pasta correta `trashnet_mlp_cnn_unifor` e confere se o ZIP do dataset existe. Não é necessário montar o Google Drive nem alterar caminhos.
+4. Execute a instalação das dependências e a verificação do TensorFlow/GPU. Só prossiga com GPU se o TensorFlow listar um dispositivo e o teste indicar `/device:GPU:0`. Se não houver GPU, altere o tipo de ambiente e reinicie o runtime.
+5. Execute a preparação dos dados. O programa verifica o SHA-256, as 2.527 imagens, as seis classes, dimensões, arquivos corrompidos e duplicatas; depois cria a divisão estratificada 70%/15%/15% com seed 42 e as Figuras 1–4. Confira o relatório antes de treinar.
+6. Execute a célula E3. É um treinamento completo para testar o fluxo, não uma execução de uma época.
+7. Execute a célula de todos os experimentos. Ela usa `--skip-existing`, então E3 não será repetido se o modelo e a configuração tiverem sido salvos corretamente; E1–E6 serão concluídos.
+8. Confira se E1, E2, E3, E4, E5 e E6 aparecem como OK na verificação. Só então execute `!python -m src.evaluate`.
+9. Confira as três tabelas CSV e as Figuras 5–8. Por fim, execute a célula de backup e baixe `TrashNet_outputs_backup.zip` para o computador.
 
-### Organização dos arquivos no Colab
+### Atenção à sessão do Colab
 
-- Código, resultados, históricos e checkpoints: pasta de projeto no Drive.
-- ZIP e imagens: `/content/trashnet_data`, disco local da VM para acelerar leitura.
-- Modelos `.keras`: `outputs/modelos/`, no Drive e ignorados pelo Git.
-
-Se o runtime for totalmente recriado, a pasta `/content/trashnet_data` é temporária e o dataset precisa ser baixado/extráido novamente. Os resultados gravados no Drive permanecem.
+- O notebook não usa Google Drive. O repositório, dataset extraído, modelos, checkpoints, históricos, métricas e figuras ficam na VM temporária em `/content`.
+- Se a sessão for encerrada ou o runtime for recriado, os arquivos de `outputs/` podem desaparecer. Baixe o backup antes de desconectar.
+- Se precisar continuar depois de uma desconexão, envie o backup para o runtime novo e restaure a pasta `outputs` dentro de `/content/trashnet-mlp-cnn-unifor/trashnet_mlp_cnn_unifor/` antes de executar os treinamentos. Se não tiver backup, será necessário treinar novamente.
+- O clone usa a branch `main`; quando o repositório for atualizado, abra um runtime novo ou execute novamente a primeira célula para obter a versão atual.
 
 ## Parte 3 — Execução local pelo VS Code (Windows)
 
