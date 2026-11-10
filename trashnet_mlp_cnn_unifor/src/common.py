@@ -34,6 +34,14 @@ EXPECTED_CLASS_COUNTS = {
     "trash": 137,
 }
 EXPECTED_TOTAL_IMAGES = sum(EXPECTED_CLASS_COUNTS.values())
+
+# Cotas inteiras para a divisão 70/15/15 da semente 42 e 2.527 imagens.
+# Os totais são 1.768 treino, 379 validação e 380 teste.
+EXPECTED_SPLIT_CLASS_COUNTS = {
+    "train": {"glass": 350, "paper": 416, "cardboard": 282, "plastic": 337, "metal": 287, "trash": 96},
+    "val":   {"glass": 75, "paper": 89, "cardboard": 60, "plastic": 72, "metal": 62, "trash": 21},
+    "test":  {"glass": 76, "paper": 89, "cardboard": 61, "plastic": 73, "metal": 61, "trash": 20},
+}
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 EXPECTED_IMAGE_SIZE = (512, 384)  # largura x altura
 
@@ -182,16 +190,17 @@ def validate_reference_dataset_counts(dataset_dir: Path) -> dict[str, int]:
 
 
 def validate_splits(splits: dict[str, Any]) -> None:
-    """Confere se a divisão salva é completa, estratificada e sem sobreposição."""
+    """Confere totais, estratificação, integridade e grupos duplicados sem vazamento."""
     if splits.get("class_order") != CLASSES:
         raise ValueError("A ordem de classes em outputs/splits.json não corresponde à proposta.")
 
     paths = splits.get("paths", {})
     labels = splits.get("labels", {})
     expected_sizes = {"train": 1768, "val": 379, "test": 380}
-    split_proportions = {"train": 0.70, "val": 0.15, "test": 0.15}
     all_paths = []
     total_by_class = {name: 0 for name in CLASSES}
+    path_to_split = {}
+
     for split_name, expected_size in expected_sizes.items():
         split_paths = paths.get(split_name, [])
         split_labels = labels.get(split_name, [])
@@ -203,6 +212,7 @@ def validate_splits(splits: dict[str, Any]) -> None:
             )
         if len(split_paths) != len(set(split_paths)):
             raise ValueError(f"Há caminhos repetidos dentro do conjunto {split_name}.")
+
         split_counts = {name: 0 for name in CLASSES}
         for relative_path, label in zip(split_paths, split_labels):
             if not isinstance(label, int) or label < 0 or label >= len(CLASSES):
@@ -214,14 +224,15 @@ def validate_splits(splits: dict[str, Any]) -> None:
                 )
             total_by_class[CLASSES[label]] += 1
             split_counts[CLASSES[label]] += 1
-        for class_name in CLASSES:
-            expected_count = EXPECTED_CLASS_COUNTS[class_name] * split_proportions[split_name]
-            if abs(split_counts[class_name] - expected_count) > 1.0:
-                raise ValueError(
-                    f"A divisão não está estratificada adequadamente em {split_name}: "
-                    f"{class_name}={split_counts[class_name]}, esperado aproximadamente {expected_count:.1f}. "
-                    "Execute novamente python -m src.prepare_data."
-                )
+            path_to_split[str(relative_path)] = split_name
+
+        expected_counts = EXPECTED_SPLIT_CLASS_COUNTS[split_name]
+        if split_counts != expected_counts:
+            raise ValueError(
+                f"A divisão não corresponde às cotas estratificadas esperadas em {split_name}: "
+                f"encontrado {split_counts}; esperado {expected_counts}. "
+                "Execute novamente python -m src.prepare_data."
+            )
         all_paths.extend(split_paths)
 
     if len(all_paths) != EXPECTED_TOTAL_IMAGES or len(set(all_paths)) != EXPECTED_TOTAL_IMAGES:
@@ -233,6 +244,23 @@ def validate_splits(splits: dict[str, Any]) -> None:
         )
     if splits.get("seed") != SEED:
         raise ValueError(f"A semente da divisão deve ser {SEED}.")
+
+    if "duplicate_groups" not in splits:
+        raise ValueError(
+            "A divisão foi criada por uma versão antiga que não registra grupos duplicados. "
+            "Execute novamente python -m src.prepare_data."
+        )
+    for group in splits.get("duplicate_groups", []):
+        if len(group) < 2:
+            raise ValueError(f"Grupo duplicado inválido no splits.json: {group}")
+        missing = [path for path in group if path not in path_to_split]
+        if missing:
+            raise ValueError(f"Imagens de um grupo duplicado não estão na divisão: {missing}")
+        assigned_splits = {path_to_split[path] for path in group}
+        if len(assigned_splits) != 1:
+            raise ValueError(
+                f"Vazamento detectado: imagens pixel-idênticas em subconjuntos diferentes: {group}"
+            )
 
 
 def load_json(path: Path) -> dict[str, Any]:
