@@ -1,7 +1,5 @@
 # Dataset: baixar do repositório oficial; não subir ao GitHub.
 data/dataset-resized/
-data/dataset-resized.zip
-data/*.zip
 
 # Pesos e checkpoints podem ser grandes; guardar no Google Drive.
 outputs/modelos/*.keras
