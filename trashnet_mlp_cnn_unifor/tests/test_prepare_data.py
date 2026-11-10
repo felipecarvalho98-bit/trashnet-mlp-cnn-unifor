@@ -59,12 +59,25 @@ def test_official_split_sizes_and_validation():
     records = []
     for label, class_name in enumerate(CLASSES):
         for image_index in range(EXPECTED_CLASS_COUNTS[class_name]):
+            # Simula dois grupos de duplicatas exatas, inclusive um entre classes,
+            # para testar que o grupo não é separado entre treino/validação/teste.
+            if (label, image_index) in {(0, 0), (1, 0)}:
+                pixel_hash = "duplicata_entre_classes"
+            elif (label, image_index) in {(2, 0), (2, 1)}:
+                pixel_hash = "duplicata_mesma_classe"
+            else:
+                pixel_hash = f"unico_{label}_{image_index}"
             records.append({
                 "path": f"{class_name}/{class_name}_{image_index:04d}.jpg",
                 "label": label,
+                "pixel_sha256": pixel_hash,
             })
 
     splits = make_stratified_splits(records)
     validate_splits(splits)
     assert splits["totals_by_split"] == {"train": 1768, "val": 379, "test": 380}
     assert len(set(splits["paths"]["train"]) | set(splits["paths"]["val"]) | set(splits["paths"]["test"])) == 2527
+    path_to_split = {path: split for split, paths in splits["paths"].items() for path in paths}
+    assert len(splits["duplicate_groups"]) == 2
+    for group in splits["duplicate_groups"]:
+        assert len({path_to_split[path] for path in group}) == 1
