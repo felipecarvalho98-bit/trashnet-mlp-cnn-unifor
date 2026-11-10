@@ -24,26 +24,26 @@ As classes são mantidas na ordem definida pelo professor: `glass`, `paper`, `ca
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
-├── src/
+└── trashnet_mlp_cnn_unifor/\n    ├── src/
 │   ├── common.py          # caminhos, download, integridade e validações
 │   ├── prepare_data.py    # inspeção, divisão, pesos e Figuras 1–4
 │   ├── models.py          # arquiteturas MLP e CNN
 │   ├── train.py           # treinamento E1–E6 e medição de custo
 │   └── evaluate.py        # seleção por validação, teste, tabelas e Figuras 5–8
-├── notebooks/
+    ├── notebooks/
 │   └── 00_Execucao_Colab.ipynb
-├── data/
+    ├── data/
 │   └── LEIA-ME.txt        # instruções; o dataset não é versionado
-├── outputs/
+    ├── outputs/
 │   ├── splits.json        # criado após a inspeção
 │   ├── metricas/          # inspeção, métricas e tabelas CSV
 │   ├── historicos/        # histórico por época
 │   ├── modelos/           # arquivos .keras (fora do Git)
 │   ├── checkpoints/       # retomada de sessões interrompidas (fora do Git)
 │   └── figuras/           # Figuras 1–8
-├── tests/
+    ├── tests/
 │   └── test_prepare_data.py
-└── docs/
+    └── docs/
     ├── ANALISE_DO_MATERIAL.md
     ├── ANALISE_GPU.md
     ├── PASSO_A_PASSO_COLAB_VSCODE_GITHUB.md
@@ -52,7 +52,7 @@ As classes são mantidas na ordem definida pelo professor: `glass`, `paper`, `ca
 
 ## 1. Dataset
 
-O arquivo oficial `data/dataset-resized.zip` está versionado neste repositório. O notebook Colab o utiliza diretamente, sem precisar baixar novamente da internet. O código confere o SHA-256 antes de extrair.
+O arquivo oficial `data/dataset-resized.zip` está versionado neste repositório. O ZIP está versionado em `trashnet_mlp_cnn_unifor/data/dataset-resized.zip`. O notebook clona o repositório no início e utiliza esse arquivo diretamente, sem baixar o dataset de outra fonte. O código confere o SHA-256 antes de extrair.
 
 O programa exige as contagens oficiais da proposta: glass 501, paper 594, cardboard 403, plastic 482, metal 410 e trash 137 (2.527 imagens no total). Essa validação é intencional: impede que uma pasta pequena de teste seja confundida com o dataset oficial. A inspeção abre todos os arquivos, confere dimensões, modo de cor, imagens corrompidas e duplicatas exatas por pixels. A execução para se encontrar algo fora do esperado, em vez de treinar silenciosamente com dados incorretos.
 
@@ -61,9 +61,9 @@ O programa exige as contagens oficiais da proposta: glass 501, paper 594, cardbo
 1. Crie um repositório público conforme `docs/PASSO_A_PASSO_COLAB_VSCODE_GITHUB.md`.
 2. Abra `notebooks/00_Execucao_Colab.ipynb` no Google Colab.
 3. Em **Ambiente de execução → Alterar o tipo de ambiente de execução**, escolha GPU.
-4. Edite `REPO_URL` na primeira célula para apontar ao repositório real da equipe.
-5. Execute as células na ordem. O código e a pasta `outputs/` ficam no Drive; imagens e ZIP ficam no disco local da VM para acelerar leitura durante as épocas.
-6. Execute a análise exploratória, treine E1–E6 e, ao final, rode a avaliação.
+4. A primeira célula clona/atualiza automaticamente o repositório público correto; não precisa editar caminhos nem montar o Google Drive.
+5. Execute as células na ordem. O código, o ZIP e a pasta `outputs/` ficam em `/content` na VM do Colab. Os resultados são temporários e devem ser baixados em backup antes de encerrar a sessão.
+6. Execute a análise exploratória, os seis treinamentos E1–E6 e, ao final, rode a avaliação.
 
 O Colab não garante um tipo específico de GPU nem disponibilidade contínua. O notebook confere se o TensorFlow detectou uma GPU e executa uma multiplicação de matrizes nela. Consulte `docs/ANALISE_GPU.md` para entender as medições e as limitações.
 
@@ -124,7 +124,7 @@ As imagens são convertidas para RGB e os pixels são normalizados dividindo por
 - O pipeline usa `tf.data` para ler, decodificar e redimensionar imagens em lotes, evitando manter todas as imagens em arrays grandes de RAM.
 - O lote tenta 32, 16, 8, 4 e 2, nessa ordem. Se ocorrer erro de falta de memória, a tentativa recomeça com lote menor e a configuração usada fica registrada.
 - `EarlyStopping` monitora `val_loss`, com paciência 8 e restauração dos melhores pesos; máximo de 60 épocas.
-- `BackupAndRestore` grava checkpoints por época durante a sessão atual; sem Drive montado, baixe backups antes que a VM seja encerrada. O histórico CSV permite reconstruir o tempo acumulado das épocas concluídas.
+- `BackupAndRestore` grava checkpoints por época durante a sessão atual. Como o notebook não monta o Google Drive, os checkpoints e demais resultados ficam na VM temporária do Colab; baixe o ZIP de backup antes que a sessão seja encerrada. O histórico CSV permite reconstruir o tempo acumulado das épocas concluídas.
 - A medição de RAM é uma amostragem de RSS do processo. O TensorFlow informa o pico do seu alocador de GPU; `nvidia-smi`, quando disponível, informa a memória do processo e utilização amostrada do dispositivo. A utilização é do dispositivo como um todo, não atribuível apenas ao processo da equipe.
 - O tempo médio e total reportados somam os tempos medidos por época. O cronômetro de `model.fit` inclui o carregamento/decodificação/redimensionamento durante o treinamento e exclui download, inspeção prévia, montagem dos datasets, compilação e gravação do modelo.
 
@@ -148,7 +148,7 @@ As matrizes de confusão exibem contagens e porcentagens por classe real. As mé
 
 ## 8. GitHub e arquivos grandes
 
-Publique no GitHub o código, notebook, documentação, divisão, métricas, tabelas e figuras. O `.gitignore` exclui dataset, modelos `.keras`, checkpoints e ambientes virtuais. Os modelos e checkpoints não são enviados ao GitHub. Como o notebook executa sem Drive, baixe os backups gerados no Colab e depois compartilhe os arquivos com o professor pelo meio de armazenamento escolhido pela equipe.
+Publique no GitHub o código, notebook, documentação, divisão, métricas, tabelas e figuras. O `.gitignore` exclui dataset, modelos `.keras`, checkpoints e ambientes virtuais. Os modelos e checkpoints não são enviados ao GitHub. Como o notebook executa sem Drive, baixe o ZIP de backup gerado no Colab e guarde-o no computador. Depois compartilhe os arquivos com o professor pelo meio de armazenamento escolhido pela equipe.
 
 Os arquivos recebidos da colega e a proposta do professor foram preservados sem alteração em `documentos_originais/`; a revisão do conteúdo do artigo está documentada em `docs/ANALISE_DO_MATERIAL.md` e `docs/ROTEIRO_REVISAO_ARTIGO.md`.
 
