@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 # Os diretórios podem ser redirecionados por variáveis de ambiente no Colab.
-# Assim, os dados ficam na VM local (leitura rápida) e os resultados persistem no Drive.
+# No Colab sem Drive, os dados e resultados ficam na VM temporária; faça backup antes de encerrar a sessão.
 DATA_DIR = Path(os.environ.get("TRASHNET_DATA_DIR", ROOT / "data")).expanduser().resolve()
 OUTPUT_DIR = Path(os.environ.get("TRASHNET_OUTPUT_DIR", ROOT / "outputs")).expanduser().resolve()
 FIG_DIR = OUTPUT_DIR / "figuras"
