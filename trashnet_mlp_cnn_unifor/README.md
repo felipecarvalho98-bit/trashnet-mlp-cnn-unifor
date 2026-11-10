@@ -52,7 +52,7 @@ As classes são mantidas na ordem definida pelo professor: `glass`, `paper`, `ca
 
 ## 1. Dataset
 
-O código baixa o `dataset-resized.zip` publicado para o TrashNet e confere o SHA-256 antes de extrair. O endereço e o hash estão definidos em `src/common.py`. Também é possível colocar manualmente o ZIP em `data/dataset-resized.zip`.
+O arquivo oficial `data/dataset-resized.zip` está versionado neste repositório. O notebook Colab o utiliza diretamente, sem precisar baixar novamente da internet. O código confere o SHA-256 antes de extrair.
 
 O programa exige as contagens oficiais da proposta: glass 501, paper 594, cardboard 403, plastic 482, metal 410 e trash 137 (2.527 imagens no total). Essa validação é intencional: impede que uma pasta pequena de teste seja confundida com o dataset oficial. A inspeção abre todos os arquivos, confere dimensões, modo de cor, imagens corrompidas e duplicatas exatas por pixels. A execução para se encontrar algo fora do esperado, em vez de treinar silenciosamente com dados incorretos.
 
@@ -124,7 +124,7 @@ As imagens são convertidas para RGB e os pixels são normalizados dividindo por
 - O pipeline usa `tf.data` para ler, decodificar e redimensionar imagens em lotes, evitando manter todas as imagens em arrays grandes de RAM.
 - O lote tenta 32, 16, 8, 4 e 2, nessa ordem. Se ocorrer erro de falta de memória, a tentativa recomeça com lote menor e a configuração usada fica registrada.
 - `EarlyStopping` monitora `val_loss`, com paciência 8 e restauração dos melhores pesos; máximo de 60 épocas.
-- `BackupAndRestore` grava checkpoints por época para retomar uma sessão interrompida. O histórico CSV permite reconstruir o tempo acumulado das épocas concluídas.
+- `BackupAndRestore` grava checkpoints por época durante a sessão atual; sem Drive montado, baixe backups antes que a VM seja encerrada. O histórico CSV permite reconstruir o tempo acumulado das épocas concluídas.
 - A medição de RAM é uma amostragem de RSS do processo. O TensorFlow informa o pico do seu alocador de GPU; `nvidia-smi`, quando disponível, informa a memória do processo e utilização amostrada do dispositivo. A utilização é do dispositivo como um todo, não atribuível apenas ao processo da equipe.
 - O tempo médio e total reportados somam os tempos medidos por época. O cronômetro de `model.fit` inclui o carregamento/decodificação/redimensionamento durante o treinamento e exclui download, inspeção prévia, montagem dos datasets, compilação e gravação do modelo.
 
@@ -148,7 +148,7 @@ As matrizes de confusão exibem contagens e porcentagens por classe real. As mé
 
 ## 8. GitHub e arquivos grandes
 
-Publique no GitHub o código, notebook, documentação, divisão, métricas, tabelas e figuras. O `.gitignore` exclui dataset, modelos `.keras`, checkpoints e ambientes virtuais. Armazene modelos e checkpoints em uma pasta compartilhada do Google Drive e adicione ao README o link público liberado para o professor, com os nomes dos arquivos disponíveis.
+Publique no GitHub o código, notebook, documentação, divisão, métricas, tabelas e figuras. O `.gitignore` exclui dataset, modelos `.keras`, checkpoints e ambientes virtuais. Os modelos e checkpoints não são enviados ao GitHub. Como o notebook executa sem Drive, baixe os backups gerados no Colab e depois compartilhe os arquivos com o professor pelo meio de armazenamento escolhido pela equipe.
 
 Os arquivos recebidos da colega e a proposta do professor foram preservados sem alteração em `documentos_originais/`; a revisão do conteúdo do artigo está documentada em `docs/ANALISE_DO_MATERIAL.md` e `docs/ROTEIRO_REVISAO_ARTIGO.md`.
 
