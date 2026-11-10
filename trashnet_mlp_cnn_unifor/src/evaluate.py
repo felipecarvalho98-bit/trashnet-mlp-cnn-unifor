@@ -202,6 +202,29 @@ def main() -> None:
     validate_reference_dataset_counts(dataset_dir)
     splits = load_json(OUTPUT_DIR / "splits.json")
     validate_splits(splits)
+
+    # Verifica os seis experimentos antes de iniciar qualquer inferência.
+    required_files = []
+    for experiment in EXPERIMENTS:
+        required_files.extend([
+            MODELS_DIR / f"modelo_{experiment}.keras",
+            METRICS_DIR / f"config_{experiment}.json",
+            HISTORY_DIR / f"historico_{experiment}.json",
+        ])
+    missing_files = [path for path in required_files if not path.is_file()]
+    if missing_files:
+        missing_names = sorted({
+            path.name.split("_")[1].split(".")[0]
+            for path in missing_files
+        })
+        details = "\\n".join(f" - {path.relative_to(OUTPUT_DIR)}" for path in missing_files)
+        raise FileNotFoundError(
+            "A avaliação exige os seis treinamentos completos (E1 a E6). "
+            f"Experimentos com arquivos ausentes: {', '.join(missing_names)}.\\n"
+            f"Arquivos ausentes:\\n{details}\\n"
+            "Execute primeiro: python -m src.train --all --skip-existing"
+        )
+
     configure_tensorflow()
 
     # Primeiro calcula apenas F1 macro da validação e escolhe o modelo de referência.
