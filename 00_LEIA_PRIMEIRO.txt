@@ -1,0 +1,24 @@
+TRASHNET — PACOTE FINAL
+
+ARTIGO
+PDF e DOCX editável em ARTIGO/.
+
+CÓDIGO PRINCIPAL
+O projeto está em trashnet_mlp_cnn_unifor/. O notebook notebooks/00_Execucao_Colab.ipynb funciona localmente ou no Google Colab e permite consultar o backup ou executar E1–E6 novamente. A nova execução é salva separadamente.
+
+RESULTADOS
+E1–E6: outputs/resultados_finais/. YOLO: outputs/yolo_bonus/. Dataset: data/.
+
+GPU AMD
+O experimento complementar E3 com DirectML está em GPU_DirectML_E3/. Código, telemetria e checkpoints estão incluídos.
+
+OBSERVAÇÕES
+- E1–E6 oficiais: TensorFlow/Keras em CPU.
+- YOLO: 90,50% de acurácia e 88,72% de F1 macro no teste; pesos pré-treinados.
+- DirectML E3: 74,41% de acurácia e 71,78% de F1 macro no teste; resultado complementar.
+- O histórico original do YOLO não contém acurácia de treino por época.
+- Os checkpoints Keras E1–E6 não estavam disponíveis nos materiais recuperados; métricas, históricos e demais artefatos disponíveis foram mantidos.
+
+Tiver problemas no reconhecimendo da minha GPU AMD RX 5500 XT (8 GB) e também na utilização no google colab ofericido a gpu t4, pois a
+execução finalizava antes do tempo gratuito liberado para o experimento! Devido a isso foi usado somente a cpu, mas no experimento E3
+conseguir refazer o experimento com DirectML GPU (sem fallback para CPU) na pasta E3_DirectML_20261117_232924.

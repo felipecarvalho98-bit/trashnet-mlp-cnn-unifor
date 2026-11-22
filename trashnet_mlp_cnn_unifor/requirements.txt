@@ -1,7 +1,11 @@
-tensorflow>=2.16,<2.22
-numpy>=1.26,<3.0
-scikit-learn>=1.4,<2.0
+# Python 3.13 (Windows 64-bit) / TensorFlow CPU
+# TensorFlow 2.21 has a Windows wheel for CPython 3.13.
+tensorflow==2.21.0
+numpy>=1.26,<2.2
+pandas>=2.2,<4.0
+scikit-learn>=1.6,<2.0
 Pillow>=10.0,<13.0
-matplotlib>=3.8,<4.0
+matplotlib>=3.9,<4.0
 psutil>=5.9,<8.0
-pandas>=2.1,<4.0
+openpyxl>=3.1,<4.0
+pytest>=8.0,<10.0

@@ -1,0 +1,112 @@
+{
+  "dataset_folder_name": "dataset-resized",
+  "total_valid_images": 2527,
+  "counts_by_class": {
+    "glass": 501,
+    "paper": 594,
+    "cardboard": 403,
+    "plastic": 482,
+    "metal": 410,
+    "trash": 137
+  },
+  "dimensions_width_x_height": {
+    "512x384": 2527
+  },
+  "original_pil_modes": {
+    "RGB": 2527
+  },
+  "expected_dimensions_width_x_height": [
+    512,
+    384
+  ],
+  "corrupted_files": [],
+  "exact_pixel_duplicates": [
+    [
+      "glass/glass115.jpg",
+      "metal/metal91.jpg"
+    ],
+    [
+      "glass/glass176.jpg",
+      "plastic/plastic152.jpg"
+    ],
+    [
+      "glass/glass389.jpg",
+      "plastic/plastic332.jpg"
+    ]
+  ],
+  "imbalance_ratio_max_over_min": 4.3358,
+  "exact_pixel_duplicate_details": [
+    {
+      "paths": [
+        "glass/glass115.jpg",
+        "metal/metal91.jpg"
+      ],
+      "classes": [
+        "glass",
+        "metal"
+      ],
+      "same_class": false
+    },
+    {
+      "paths": [
+        "glass/glass176.jpg",
+        "plastic/plastic152.jpg"
+      ],
+      "classes": [
+        "glass",
+        "plastic"
+      ],
+      "same_class": false
+    },
+    {
+      "paths": [
+        "glass/glass389.jpg",
+        "plastic/plastic332.jpg"
+      ],
+      "classes": [
+        "glass",
+        "plastic"
+      ],
+      "same_class": false
+    }
+  ],
+  "split_counts": {
+    "train": {
+      "glass": 350,
+      "paper": 416,
+      "cardboard": 282,
+      "plastic": 337,
+      "metal": 287,
+      "trash": 96
+    },
+    "val": {
+      "glass": 75,
+      "paper": 89,
+      "cardboard": 60,
+      "plastic": 72,
+      "metal": 62,
+      "trash": 21
+    },
+    "test": {
+      "glass": 76,
+      "paper": 89,
+      "cardboard": 61,
+      "plastic": 73,
+      "metal": 61,
+      "trash": 20
+    }
+  },
+  "split_totals": {
+    "train": 1768,
+    "val": 379,
+    "test": 380
+  },
+  "dataset_exploration_summary": {
+    "images_validated": 2527,
+    "all_files_opened_successfully": true,
+    "exact_duplicate_groups_found": 3,
+    "duplicate_groups_kept_within_one_split": true,
+    "all_images_match_expected_size": true,
+    "all_images_rgb_after_pipeline_conversion": true
+  }
+}

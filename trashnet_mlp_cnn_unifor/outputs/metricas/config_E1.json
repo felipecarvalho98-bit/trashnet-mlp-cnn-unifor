@@ -1,0 +1,59 @@
+{
+  "experiment": "E1",
+  "model_type": "mlp",
+  "input_width_height": [
+    128,
+    96
+  ],
+  "keras_input_shape_height_width_channels": [
+    96,
+    128,
+    3
+  ],
+  "class_weights_enabled": false,
+  "class_weights_used": null,
+  "batch_size_used": 32,
+  "batch_size_attempts": [
+    {
+      "batch_size": 32,
+      "status": "success",
+      "seconds": 189.552
+    }
+  ],
+  "epochs_executed": 9,
+  "best_epoch_by_val_loss": 1,
+  "total_parameters": 19007750,
+  "trainable_parameters": 19007750,
+  "model_size_mb": 217.557,
+  "training_total_seconds": 178.806,
+  "training_mean_seconds_per_epoch": 19.867,
+  "training_current_session_fit_seconds": 189.552,
+  "ram_peak_sampled_mb": 1257.97,
+  "gpu_tensorflow_allocator_peak_mb": null,
+  "gpu_process_peak_nvidia_smi_mb": null,
+  "gpu_utilization_mean_sampled_percent": null,
+  "gpu_utilization_max_sampled_percent": null,
+  "gpu_utilization_sample_count": 0,
+  "nvidia_smi_devices": [],
+  "hardware": {
+    "python": "3.13.18",
+    "tensorflow": "2.21.0",
+    "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+    "gpu_detected": false,
+    "gpu_names": [],
+    "gpu_devices_nvidia_smi": [],
+    "cpu_count": 2
+  },
+  "seed": 42,
+  "optimizer": "Adam",
+  "learning_rate": 0.001,
+  "loss": "sparse_categorical_crossentropy",
+  "early_stopping": {
+    "monitor": "val_loss",
+    "patience": 8,
+    "restore_best_weights": true,
+    "max_epochs": 60
+  },
+  "timing_method": "time.perf_counter ao redor de model.fit; inclui leitura/decodificação/redimensionamento por tf.data durante o treinamento; exclui download, inspeção inicial, montagem de datasets, compilação e gravação do arquivo .keras.",
+  "memory_method": "RAM: RSS do processo amostrado em lotes/épocas. GPU: pico do alocador TensorFlow via tf.config.experimental.get_memory_info, pico de memória do processo via nvidia-smi e utilização média/máxima amostrada da GPU. A utilização é do dispositivo, não uma medida exclusiva do processo. Todas são amostradas; null indica dado indisponível."
+}

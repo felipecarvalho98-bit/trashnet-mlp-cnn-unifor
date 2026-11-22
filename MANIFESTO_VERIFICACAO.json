@@ -1,0 +1,151 @@
+{
+  "data_consolidacao": "2026-11-18",
+  "dataset": {
+    "images_after_exact_deduplication": 2524,
+    "class_counts": {
+      "glass": 501,
+      "paper": 594,
+      "cardboard": 403,
+      "plastic": 480,
+      "metal": 409,
+      "trash": 137
+    },
+    "split_counts": {
+      "train": 1766,
+      "validation": 379,
+      "test": 379
+    },
+    "seed": 42
+  },
+  "official_E1_E6": {
+    "selected_model": "E3",
+    "validation_macro_f1": 0.7631178046,
+    "test_accuracy": 0.76781,
+    "test_macro_f1": 0.7476132941,
+    "execution_device": "CPU",
+    "framework": "TensorFlow/Keras"
+  },
+  "YOLO": {
+    "test_accuracy": 0.9050131926121372,
+    "test_macro_f1": 0.8871868819454835,
+    "epochs_logged": 28,
+    "training_seconds": 1466.0,
+    "training_accuracy_curve_saved": false
+  },
+  "DirectML_E3": {
+    "test_accuracy": 0.7440633245382586,
+    "test_macro_f1": 0.7178314743991351,
+    "epochs": 60,
+    "gpu_name": "AMD Radeon RX 5500 XT",
+    "gpu_average_engine_usage": 39.05,
+    "gpu_max_engine_usage": 50.0
+  },
+  "validated_files": [
+    {
+      "path": "ARTIGO/Artigo_TrashNet_UNIFOR_Final_com_YOLO.pdf",
+      "bytes": 671374,
+      "sha256": "548de16997be5ff3eeb02d548a31a9baa3b376122fc144ac69de30ff69695ab3"
+    },
+    {
+      "path": "ARTIGO/Artigo_TrashNet_UNIFOR_Final_com_YOLO.docx",
+      "bytes": 366491,
+      "sha256": "ed836173e9a7f0c5484c9caa4d63d9d97258a7a481d2175e0af7d107974d9927"
+    },
+    {
+      "path": "trashnet_mlp_cnn_unifor/notebooks/00_Execucao_Colab.ipynb",
+      "bytes": 11141,
+      "sha256": "ff246d56e8da49ec71b7481e838e6e054e79e414eb841559f5d5571f5c08ab3e"
+    },
+    {
+      "path": "trashnet_mlp_cnn_unifor/src/train.py",
+      "bytes": 9515,
+      "sha256": "1c075faa97bb0429812c8366ea55b07ff083b1308230374ebfc07fb0ccc8fe7b"
+    },
+    {
+      "path": "trashnet_mlp_cnn_unifor/src/train_yolo_bonus_curva.py",
+      "bytes": 21130,
+      "sha256": "7b316f11f8001a5e679525a27bf789cfb48a56df225262669607460d19ad19da"
+    },
+    {
+      "path": "GPU_DirectML_E3/src/train.py",
+      "bytes": 29226,
+      "sha256": "3a2e0b00571f154ccfbb80f41aa2a1870f11e0d6e2c7fe53686ef81e7d15d326"
+    },
+    {
+      "path": "GPU_DirectML_E3/outputs/E3_DirectML_20261117_232924/resumo_execucao.json",
+      "bytes": 8000,
+      "sha256": "fac79c7de86232cd3cb668faf66e08feb3d5d312696ebdb3f16f8d5894044a49"
+    },
+    {
+      "path": "trashnet_mlp_cnn_unifor/data/dataset-resized_TrashNet_mesmo_dataset.zip",
+      "bytes": 42640158,
+      "sha256": "2e17f6056c2dfa6e63394a4e633b85808cadd524be490a2de84973b5742c9d24"
+    },
+    {
+      "path": "ARQUIVOS_BACKUP/resultados_finais_E1_E6.zip",
+      "bytes": 2511260,
+      "sha256": "6cef1eabe009963abe7c22298bcd5ff6849886ddcc3c568dbb90c682646fbe84"
+    },
+    {
+      "path": "ARQUIVOS_BACKUP/yolo_bonus_resultados.zip",
+      "bytes": 15022445,
+      "sha256": "fa3196ebbb86ef61b2d4658476ab36660e5cf668568a1178b4ef230c86b10747"
+    },
+    {
+      "path": "ARQUIVOS_BACKUP/E3_DirectML_resultados_20261118.zip",
+      "bytes": 2836405,
+      "sha256": "a9f1dc0685b8ed798a79044e9514b134f011a70cde6ceb65b22105382de3dbec"
+    },
+    {
+      "path": "README.md",
+      "bytes": 680,
+      "sha256": "487a8d46575dc072dadf0082d080ebb72bae3cbd6769512a0f2132458f1b5dd8"
+    },
+    {
+      "path": "00_LEIA_PRIMEIRO.txt",
+      "bytes": 1004,
+      "sha256": "923a93f15ddcd7512db30365c5925017761ac3e163c0bf26f6b85e768fff8240"
+    },
+    {
+      "path": "trashnet_mlp_cnn_unifor/README.md",
+      "bytes": 1821,
+      "sha256": "3b905d3bcdc76780fc119a668db95242f4dec2c22c28cc38db0a3151d755d507"
+    },
+    {
+      "path": "trashnet_mlp_cnn_unifor/docs/RESULTADOS_FINAIS.md",
+      "bytes": 2146,
+      "sha256": "3522b70acd6a3ed36bc8ec75ec8cb4d830a0a3c5a36cafb7b2368ad50b45e3da"
+    },
+    {
+      "path": "trashnet_mlp_cnn_unifor/docs/ESTRUTURA_E_FUNCOES.md",
+      "bytes": 883,
+      "sha256": "4ffd36d4805b5234c324649939276a450ab0cfd9d3b995de66b3409daffd3d82"
+    },
+    {
+      "path": "trashnet_mlp_cnn_unifor/docs/EXECUCAO_COLAB.md",
+      "bytes": 668,
+      "sha256": "0a71b1424b294576a91ff559f18f0299e456a0ce2f495de204de9b6fb2b17258"
+    },
+    {
+      "path": "trashnet_mlp_cnn_unifor/docs/OBJETIVO_EXTRA_YOLO.md",
+      "bytes": 1392,
+      "sha256": "5fb5b4a418d990d9cbbf3ca3c611cd9eca9acc10f88697aa16779d7841255b8b"
+    },
+    {
+      "path": "GPU_DirectML_E3/README.md",
+      "bytes": 1007,
+      "sha256": "e01a80121411c6a71362667f149023775db57b9208b2aa2e12b16c9e4f6e6470"
+    }
+  ],
+  "project_test_verification": {
+    "command": "PYTHONPATH=. pytest -q",
+    "result": "2 passed, 1 skipped",
+    "note": "Testes automatizados do projeto principal; execução completa E1-E6 não foi refeita durante a montagem do pacote."
+  },
+  "limitations": [
+    "Não foram encontrados checkpoints Keras (.keras/.h5) dos experimentos oficiais E1-E6 nos arquivos de origem disponíveis. Código e resultados exportados foram incluídos.",
+    "O histórico original do YOLO não preservou a acurácia de treino por época. O script src/train_yolo_bonus_curva.py permite nova execução com esse registro.",
+    "O pacote local não sincroniza alterações com o repositório GitHub."
+  ],
+  "data_revisao": "2026-11-21"
+}

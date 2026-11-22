@@ -1,0 +1,7 @@
+{
+  "criterio": "Maior macro-F1 no conjunto de validação",
+  "experimento_selecionado": "E3",
+  "melhor_val_macro_f1": 0.7631178045999518,
+  "macro_f1_teste_do_selecionado": 0.7476132941055322,
+  "nota": "O conjunto de teste não foi usado para selecionar o modelo; é apresentado apenas para avaliação final."
+}

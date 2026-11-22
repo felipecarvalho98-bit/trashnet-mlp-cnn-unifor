@@ -1,0 +1,5 @@
+O dataset não precisa ficar no Google Drive.
+No Google Colab, execute o notebook notebooks/00_Colab_Executar.ipynb.
+Se o arquivo dataset-resized.zip não estiver junto ao repositório, o notebook abrirá
+uma janela para enviar esse ZIP diretamente do computador para a sessão temporária.
+No VS Code, extraia o dataset nesta pasta, mantendo as seis pastas de classes.

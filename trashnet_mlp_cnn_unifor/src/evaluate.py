@@ -1,353 +1,282 @@
+"""Avaliação e comparação dos modelos."""
 from __future__ import annotations
 
 import argparse
-import csv
 import json
+import shutil
 from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import tensorflow as tf
-from PIL import Image, ImageOps
-from sklearn.metrics import (
-    accuracy_score, classification_report, confusion_matrix, f1_score,
-    precision_recall_fscore_support,
-)
+from PIL import Image
+from sklearn.metrics import (accuracy_score, classification_report, confusion_matrix,
+                             precision_recall_fscore_support, f1_score)
 
-from src.common import (
-    CLASSES, EXPERIMENTS, FIG_DIR, HISTORY_DIR, METRICS_DIR, MODELS_DIR,
-    OUTPUT_DIR, find_dataset_dir, load_json, make_output_dirs, save_json,
-    validate_reference_dataset_counts, validate_splits,
-)
-from src.train import build_dataset, configure_tensorflow
+from .config import CLASS_NAMES, EXPERIMENTS, FINAL_DIR, OUTPUT_DIR, BATCH_SIZE, experiment_dir
+from .data_utils import load_splits
+from .training_utils import make_dataset
 
 
-def _predict(model: tf.keras.Model, dataset: tf.data.Dataset) -> np.ndarray:
-    return model.predict(dataset, verbose=0)
+def _plot_confusions(cm: np.ndarray, out_dir: Path, exp_id: str) -> None:
+    "Desenha duas versões da matriz de confusão: uma com a quantidade de exemplos e outra com percentuais calculados por classe verdadeira."
+    for normalize, suffix, title in [(False, "counts", "Matriz de confusão — contagens"), (True, "percent", "Matriz de confusão — percentual por classe real")]:
+        values = cm.astype(float)
+        if normalize:
+            row_sums = values.sum(axis=1, keepdims=True)
+            values = np.divide(values, row_sums, out=np.zeros_like(values), where=row_sums != 0) * 100
+        fig, ax = plt.subplots(figsize=(7, 6))
+        im = ax.imshow(values, cmap="Blues")
+        ax.set_xticks(range(len(CLASS_NAMES)), CLASS_NAMES, rotation=35, ha="right")
+        ax.set_yticks(range(len(CLASS_NAMES)), CLASS_NAMES)
+        ax.set_xlabel("Classe prevista")
+        ax.set_ylabel("Classe real")
+        ax.set_title(f"{exp_id} — {title}")
+        for i in range(len(CLASS_NAMES)):
+            for j in range(len(CLASS_NAMES)):
+                label = f"{values[i, j]:.1f}%" if normalize else str(int(values[i, j]))
+                ax.text(j, i, label, ha="center", va="center", color="black", fontsize=9)
+        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+        fig.tight_layout()
+        fig.savefig(out_dir / f"matriz_confusao_{suffix}.png", dpi=160)
+        plt.close(fig)
 
 
-def _write_csv(path: Path, header: list[str], rows: list[list]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", newline="", encoding="utf-8-sig") as handle:
-        writer = csv.writer(handle)
-        writer.writerow(header)
-        writer.writerows(rows)
-
-
-def _make_validation_scores(dataset_dir: Path, splits: dict, requested_batch_size: int | None) -> dict:
-    scores = {}
-    for experiment, cfg in EXPERIMENTS.items():
-        model_path = MODELS_DIR / f"modelo_{experiment}.keras"
-        config_path = METRICS_DIR / f"config_{experiment}.json"
-        if not model_path.exists() or not config_path.exists():
-            raise FileNotFoundError(
-                f"Faltam arquivos de {experiment}. Execute o treinamento dos seis modelos antes da avaliação."
-            )
-        width, height = cfg["width"], cfg["height"]
-        config = load_json(config_path)
-        inference_batch_size = requested_batch_size or int(config["batch_size_used"])
-        val_ds = build_dataset(
-            dataset_dir, splits["paths"]["val"], splits["labels"]["val"],
-            width, height, batch_size=inference_batch_size, training=False,
-        )
-        model = tf.keras.models.load_model(model_path)
-        probabilities = _predict(model, val_ds)
-        predictions = probabilities.argmax(axis=1)
-        scores[experiment] = float(
-            f1_score(splits["labels"]["val"], predictions, average="macro", zero_division=0)
-        )
-        print(f"{experiment}: F1 macro de validação = {scores[experiment]:.4f}")
-        del model, probabilities, predictions, val_ds
-        tf.keras.backend.clear_session()
-    return scores
-
-
-def _create_learning_curves() -> None:
-    fig, axes = plt.subplots(2, 3, figsize=(15, 8))
-    for ax, experiment in zip(axes.ravel(), EXPERIMENTS):
-        history = load_json(HISTORY_DIR / f"historico_{experiment}.json")
-        epochs = np.arange(1, len(history.get("loss", [])) + 1)
-        ax.plot(epochs, history.get("loss", []), label="Perda - treino")
-        ax.plot(epochs, history.get("val_loss", []), label="Perda - validação")
-        ax.set_xlabel("Época")
-        ax.set_ylabel("Perda")
-        ax.set_title(experiment)
-        ax.grid(alpha=0.2)
-        ax2 = ax.twinx()
-        ax2.plot(epochs, history.get("accuracy", []), linestyle="--", label="Acurácia - treino")
-        ax2.plot(epochs, history.get("val_accuracy", []), linestyle=":", label="Acurácia - validação")
-        ax2.set_ylabel("Acurácia")
-        lines, labels = ax.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax.legend(lines + lines2, labels + labels2, fontsize=7, loc="best")
-    fig.suptitle("Curvas de aprendizagem dos seis experimentos")
+def _plot_training_history(history_path: Path, out_dir: Path, exp_id: str) -> None:
+    "Mostra como loss e acurácia mudaram durante o treino e a validação. As curvas ajudam a observar a evolução do aprendizado."
+    if not history_path.exists():
+        return
+    history = pd.read_csv(history_path)
+    if history.empty:
+        return
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
+    if {"loss", "val_loss"}.issubset(history.columns):
+        axes[0].plot(history.epoch, history.loss, label="Treino")
+        axes[0].plot(history.epoch, history.val_loss, label="Validação")
+        axes[0].set_title("Loss")
+        axes[0].set_xlabel("Época")
+        axes[0].set_ylabel("Loss")
+        axes[0].legend()
+        axes[0].grid(alpha=0.25)
+    if {"accuracy", "val_accuracy"}.issubset(history.columns):
+        axes[1].plot(history.epoch, history.accuracy, label="Treino")
+        axes[1].plot(history.epoch, history.val_accuracy, label="Validação")
+        axes[1].set_title("Acurácia")
+        axes[1].set_xlabel("Época")
+        axes[1].set_ylabel("Acurácia")
+        axes[1].legend()
+        axes[1].grid(alpha=0.25)
+    fig.suptitle(f"{exp_id} — curvas de aprendizagem")
     fig.tight_layout()
-    fig.savefig(FIG_DIR / "fig5_curvas_aprendizagem.png", dpi=180)
+    fig.savefig(out_dir / "curvas_aprendizado.png", dpi=160)
     plt.close(fig)
 
 
-def _create_confusion_figure(results: dict) -> None:
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-    for ax, experiment in zip(axes.ravel(), EXPERIMENTS):
-        matrix = np.asarray(results[experiment]["confusion_matrix"], dtype=int)
-        row_totals = matrix.sum(axis=1, keepdims=True)
-        percentages = np.divide(
-            matrix, row_totals, out=np.zeros_like(matrix, dtype=float), where=row_totals != 0
-        ) * 100.0
-        image = ax.imshow(percentages, cmap="Blues", vmin=0, vmax=100)
-        ax.set_xticks(range(len(CLASSES)), CLASSES, rotation=45, ha="right", fontsize=7)
-        ax.set_yticks(range(len(CLASSES)), CLASSES, fontsize=7)
-        ax.set_xlabel("Prevista")
-        ax.set_ylabel("Real")
-        ax.set_title(experiment)
-        for row in range(len(CLASSES)):
-            for col in range(len(CLASSES)):
-                ax.text(
-                    col, row, f"{matrix[row, col]}\n{percentages[row, col]:.0f}%",
-                    ha="center", va="center", fontsize=6,
-                    color="white" if percentages[row, col] >= 60 else "black",
-                )
-    fig.colorbar(image, ax=axes.ravel().tolist(), shrink=0.7, label="Percentual por classe real (%)")
-    fig.suptitle("Matrizes de confusão: contagem e percentual por linha")
-    fig.savefig(FIG_DIR / "fig6_matrizes_confusao.png", dpi=180, bbox_inches="tight")
-    plt.close(fig)
+def evaluate_one(exp_id: str, splits: pd.DataFrame, dataset_root: Path) -> dict:
+    "Carrega o melhor modelo salvo e calcula as métricas no conjunto de teste. Também salva previsões, métricas por classe, matrizes de confusão e exemplos de erros."
+    cfg = EXPERIMENTS[exp_id]
+    out_dir = experiment_dir(exp_id)
+    model_path = out_dir / "best_model.keras"
+    metadata_path = out_dir / "training_metadata.json"
+    if not model_path.exists() or not metadata_path.exists():
+        raise FileNotFoundError(f"Modelo/metadata de {exp_id} não encontrado. Execute o treinamento primeiro.")
+    test_df = splits[splits.split == "test"].reset_index(drop=True)
+    ds = make_dataset(test_df, cfg["image_size"], training=False)
+    model = tf.keras.models.load_model(model_path)
+    probabilities = model.predict(ds, verbose=0)
+    y_true = test_df.class_index.to_numpy(dtype=int)
+    y_pred = probabilities.argmax(axis=1)
+    confidence = probabilities.max(axis=1)
+    cm = confusion_matrix(y_true, y_pred, labels=list(range(len(CLASS_NAMES))))
+    accuracy = float(accuracy_score(y_true, y_pred))
+    precision, recall, f1, support = precision_recall_fscore_support(
+        y_true, y_pred, labels=list(range(len(CLASS_NAMES))), zero_division=0
+    )
+    macro_f1 = float(f1_score(y_true, y_pred, labels=list(range(len(CLASS_NAMES))), average="macro", zero_division=0))
+    report = classification_report(y_true, y_pred, labels=list(range(len(CLASS_NAMES))), target_names=CLASS_NAMES, output_dict=True, zero_division=0)
+    pd.DataFrame(report).transpose().to_csv(out_dir / "metricas_por_classe.csv", index=True, index_label="classe")
+    pd.DataFrame(cm, index=CLASS_NAMES, columns=CLASS_NAMES).to_csv(out_dir / "matriz_confusao_contagens.csv")
+    row_sums = cm.sum(axis=1, keepdims=True)
+    cm_pct = np.divide(cm, row_sums, out=np.zeros_like(cm, dtype=float), where=row_sums != 0) * 100
+    pd.DataFrame(cm_pct, index=CLASS_NAMES, columns=CLASS_NAMES).to_csv(out_dir / "matriz_confusao_percentual.csv", float_format="%.2f")
+    _plot_confusions(cm, out_dir, exp_id)
 
+    predictions = test_df[["relative_path", "class_name", "class_index"]].copy()
+    predictions = predictions.rename(columns={"class_name": "classe_real", "class_index": "indice_real"})
+    predictions["classe_prevista"] = [CLASS_NAMES[i] for i in y_pred]
+    predictions["confianca_prevista"] = confidence
+    predictions["acertou"] = y_true == y_pred
+    for idx, class_name in enumerate(CLASS_NAMES):
+        predictions[f"prob_{class_name}"] = probabilities[:, idx]
+    predictions.to_csv(out_dir / "previsoes_teste.csv", index=False)
 
-def _create_resolution_figure(results: dict) -> None:
-    experiments = ["E3", "E5", "E6"]
-    labels = [
-        f"{EXPERIMENTS[e]['width']} × {EXPERIMENTS[e]['height']}"
-        for e in experiments
-    ]
-    accuracy = [results[e]["accuracy_test"] for e in experiments]
-    macro_f1 = [results[e]["macro_f1_test"] for e in experiments]
-    mean_seconds = [results[e]["training_mean_seconds_per_epoch"] for e in experiments]
-    total_seconds = [results[e]["training_total_seconds"] for e in experiments]
-
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
-    x = np.arange(len(experiments))
-    width = 0.35
-    axes[0].bar(x - width / 2, accuracy, width, label="Acurácia")
-    axes[0].bar(x + width / 2, macro_f1, width, label="F1 macro")
-    axes[0].set_xticks(x, labels)
-    axes[0].set_ylim(0, 1)
-    axes[0].set_ylabel("Métrica no teste")
-    axes[0].set_title("Desempenho")
-    axes[0].legend(fontsize=8)
-
-    axes[1].bar(labels, mean_seconds)
-    axes[1].set_ylabel("Segundos")
-    axes[1].set_title("Tempo médio por época")
-
-    axes[2].bar(labels, total_seconds)
-    axes[2].set_ylabel("Segundos")
-    axes[2].set_title("Tempo total de treinamento")
-    for ax in axes:
-        ax.tick_params(axis="x", labelrotation=20)
-        ax.grid(axis="y", alpha=0.2)
-    fig.suptitle("CNN sem pesos de classe: efeito da resolução e custo")
-    fig.tight_layout()
-    fig.savefig(FIG_DIR / "fig7_resolucao_e_custo.png", dpi=180)
-    plt.close(fig)
-
-
-def _create_error_figure(dataset_dir: Path, splits: dict, best_experiment: str,
-                         best_predictions: np.ndarray, best_probabilities: np.ndarray) -> list[dict]:
-    y_true = np.asarray(splits["labels"]["test"], dtype=int)
-    errors = np.flatnonzero(best_predictions != y_true)[:6]
-    fig, axes = plt.subplots(1, 6, figsize=(16, 4))
-    for ax in axes.ravel():
-        ax.axis("off")
-    records = []
-    if len(errors) == 0:
-        fig.suptitle(f"{best_experiment}: nenhum erro no conjunto de teste")
-    else:
-        for ax, index in zip(axes.ravel(), errors):
-            relative_path = splits["paths"]["test"][int(index)]
-            with Image.open(dataset_dir / relative_path) as source:
-                ax.imshow(ImageOps.exif_transpose(source).convert("RGB"))
-            predicted_class = int(best_predictions[index])
-            probability = float(best_probabilities[index, predicted_class])
-            real_class = int(y_true[index])
-            ax.set_title(
-                f"Real: {CLASSES[real_class]}\nPrev.: {CLASSES[predicted_class]}\nP={probability:.3f}",
-                fontsize=7,
-            )
+    errors = predictions[~predictions.acertou].copy().sort_values("confianca_prevista", ascending=False).head(6)
+    errors.to_csv(out_dir / "analise_erros_top6.csv", index=False)
+    if len(errors):
+        fig, axes = plt.subplots(len(errors), 1, figsize=(8, max(3, len(errors) * 2.4)))
+        if len(errors) == 1:
+            axes = [axes]
+        for ax, (_, row) in zip(axes, errors.iterrows()):
+            with Image.open(dataset_root / row.relative_path) as im:
+                ax.imshow(im.convert("RGB"))
+            ax.set_title(f"Real: {row.classe_real} | Prevista: {row.classe_prevista} | Confiança: {row.confianca_prevista:.1%}")
             ax.axis("off")
-            records.append({
-                "path": relative_path,
-                "real_class": CLASSES[real_class],
-                "predicted_class": CLASSES[predicted_class],
-                "predicted_class_probability": probability,
-            })
-    fig.suptitle(f"Até seis erros do modelo selecionado pela validação ({best_experiment})")
+        fig.suptitle(f"{exp_id} — erros de maior confiança (até 6)")
+        fig.tight_layout()
+        fig.savefig(out_dir / "analise_erros_top6.png", dpi=150, bbox_inches="tight")
+        plt.close(fig)
+
+    history_path = out_dir / "historico_treinamento.csv"
+    history = pd.read_csv(history_path) if history_path.exists() else pd.DataFrame()
+    _plot_training_history(history_path, out_dir, exp_id)
+    meta = json.loads(metadata_path.read_text(encoding="utf-8"))
+    result = {
+        "experimento": exp_id,
+        "modelo": cfg["model_type"],
+        "resolucao": f"{cfg['image_size'][1]}x{cfg['image_size'][0]}",
+        "pesos_de_classe": bool(cfg["class_weights"]),
+        "accuracy_teste": accuracy,
+        "macro_precision_teste": float(np.mean(precision)),
+        "macro_recall_teste": float(np.mean(recall)),
+        "macro_f1_teste": macro_f1,
+        "weighted_f1_teste": float(report["weighted avg"]["f1-score"]),
+        "parametros": int(meta["model_parameters"]),
+        "tamanho_modelo_mb": float(meta["model_file_size_mb"]),
+        "epocas_executadas": int(meta["epochs_completed"]),
+        "melhor_epoca_val_macro_f1": meta["best_epoch_by_validation_macro_f1"],
+        "melhor_val_macro_f1": meta["best_validation_macro_f1"],
+        "tempo_treinamento_segundos": float(meta["total_training_seconds"]),
+        "tempo_medio_epoca_segundos": meta["average_epoch_seconds"],
+        "ram_total_gb": meta["hardware"].get("ram_total_gb"),
+        "ram_processo_pico_amostrado_mb": meta.get("process_ram_peak_mb_sampled"),
+        "dispositivo": meta["hardware"].get("execution_device"),
+        "observacao": "Métricas calculadas no conjunto de teste; seleção do checkpoint pela macro-F1 de validação.",
+    }
+    pd.DataFrame({"classe": CLASS_NAMES, "precision": precision, "recall": recall, "f1_score": f1, "support": support}).to_csv(out_dir / "metricas_detalhadas_por_classe.csv", index=False)
+    (out_dir / "metricas_teste.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"{exp_id}: accuracy={accuracy:.4f} | macro-F1={macro_f1:.4f}")
+    return result
+
+
+def _make_global_outputs(results: list[dict]) -> None:
+    "Reúne os resultados dos experimentos que já foram avaliados em arquivos CSV e Excel, gráficos comparativos e um JSON que registra o modelo escolhido pela validação."
+    FINAL_DIR.mkdir(parents=True, exist_ok=True)
+    tables_dir = FINAL_DIR / "tabelas"
+    charts_dir = FINAL_DIR / "graficos"
+    confusion_dir = FINAL_DIR / "matrizes_confusao"
+    errors_dir = FINAL_DIR / "analise_erros"
+    for folder in (tables_dir, charts_dir, confusion_dir, errors_dir):
+        folder.mkdir(parents=True, exist_ok=True)
+    df = pd.DataFrame(results).sort_values("experimento")
+    df.to_csv(tables_dir / "resumo_experimentos.csv", index=False)
+    df.to_csv(FINAL_DIR / "resumo_experimentos.csv", index=False)
+    with pd.ExcelWriter(tables_dir / "resumo_experimentos.xlsx", engine="openpyxl") as writer:
+        df.to_excel(writer, sheet_name="Resumo", index=False)
+        for row in results:
+            exp_dir = experiment_dir(row["experimento"])
+            per_class = pd.read_csv(exp_dir / "metricas_detalhadas_por_classe.csv")
+            per_class.to_excel(writer, sheet_name=row["experimento"][:31], index=False)
+            per_class.to_csv(tables_dir / f"metricas_por_classe_{row['experimento']}.csv", index=False)
+            # Centraliza os artefatos dos seis experimentos para facilitar a correção.
+            for filename in ("curvas_aprendizado.png",):
+                source = exp_dir / filename
+                if source.exists():
+                    shutil.copy2(source, charts_dir / f"{row['experimento']}_{filename}")
+            for filename in ("matriz_confusao_counts.png", "matriz_confusao_percent.png"):
+                source = exp_dir / filename
+                if source.exists():
+                    shutil.copy2(source, confusion_dir / f"{row['experimento']}_{filename}")
+    shutil.copy2(tables_dir / "resumo_experimentos.xlsx", FINAL_DIR / "resumo_experimentos.xlsx")
+    best = max(results, key=lambda r: (r["melhor_val_macro_f1"] if r["melhor_val_macro_f1"] is not None else -1))
+    # Copia a análise de erros somente do modelo escolhido pela validação.
+    best_dir = experiment_dir(best["experimento"])
+    for filename in ("analise_erros_top6.csv", "analise_erros_top6.png", "previsoes_teste.csv"):
+        source = best_dir / filename
+        if source.exists():
+            shutil.copy2(source, errors_dir / f"{best['experimento']}_{filename}")
+    (FINAL_DIR / "selecao_modelo.json").write_text(json.dumps({
+        "criterio": "Maior macro-F1 no conjunto de validação",
+        "experimento_selecionado": best["experimento"],
+        "melhor_val_macro_f1": best["melhor_val_macro_f1"],
+        "macro_f1_teste_do_selecionado": best["macro_f1_teste"],
+        "nota": "O conjunto de teste não foi usado para selecionar o modelo; é apresentado apenas para avaliação final.",
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # Gráfico comparando métricas finais.
+    fig, ax = plt.subplots(figsize=(10, 5))
+    x = np.arange(len(df))
+    width = 0.25
+    ax.bar(x - width, df.accuracy_teste, width, label="Accuracy")
+    ax.bar(x, df.macro_f1_teste, width, label="Macro-F1")
+    ax.bar(x + width, df.weighted_f1_teste, width, label="Weighted-F1")
+    ax.set_xticks(x, df.experimento)
+    ax.set_ylim(0, 1)
+    ax.set_ylabel("Métrica")
+    ax.set_title("Comparação dos seis experimentos no conjunto de teste")
+    ax.legend()
+    ax.grid(axis="y", alpha=0.25)
     fig.tight_layout()
-    fig.savefig(FIG_DIR / "fig8_erros_modelo_referencia.png", dpi=180)
+    fig.savefig(charts_dir / "comparacao_metricas_teste.png", dpi=160)
+    fig.savefig(FINAL_DIR / "comparacao_metricas_teste.png", dpi=160)
     plt.close(fig)
-    return records
+
+    # Tempo de treinamento e tamanho dos modelos.
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.bar(df.experimento, df.tempo_treinamento_segundos / 60)
+    ax.set_ylabel("Minutos")
+    ax.set_title("Tempo total de treinamento por experimento")
+    ax.grid(axis="y", alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(charts_dir / "comparacao_tempo_treinamento.png", dpi=160)
+    fig.savefig(FINAL_DIR / "comparacao_tempo_treinamento.png", dpi=160)
+    plt.close(fig)
+
+    cnn = df[df.experimento.isin(["E3", "E5", "E6"])].copy()
+    if len(cnn) >= 2:
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.plot(cnn.resolucao, cnn.accuracy_teste, marker="o", label="Accuracy")
+        ax.plot(cnn.resolucao, cnn.macro_f1_teste, marker="o", label="Macro-F1")
+        ax.set_ylim(0, 1)
+        ax.set_xlabel("Resolução")
+        ax.set_ylabel("Métrica")
+        ax.set_title("CNN: efeito da resolução nas métricas de teste")
+        ax.legend()
+        ax.grid(alpha=0.25)
+        fig.tight_layout()
+        fig.savefig(charts_dir / "comparacao_resolucao_cnn.png", dpi=160)
+        fig.savefig(FINAL_DIR / "comparacao_resolucao_cnn.png", dpi=160)
+        plt.close(fig)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Avalia os seis modelos e gera tabelas e figuras.")
-    parser.add_argument(
-        "--batch-size", type=int, default=None,
-        help="Lote de inferência. Por padrão, usa o lote registrado no treinamento de cada modelo.",
-    )
+    "Define quais experimentos serão avaliados e, ao final, consolida os resultados disponíveis. Se um modelo ainda não foi treinado, ele é ignorado quando a opção é avaliar todos."
+    parser = argparse.ArgumentParser(description="Avalia modelos treinados do TrashNet")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--all", action="store_true", help="Avalia todos os experimentos com modelos disponíveis")
+    group.add_argument("--experiment", choices=list(EXPERIMENTS), help="Avalia um experimento")
     args = parser.parse_args()
-
-    make_output_dirs()
-    dataset_dir = find_dataset_dir()
-    validate_reference_dataset_counts(dataset_dir)
-    splits = load_json(OUTPUT_DIR / "splits.json")
-    validate_splits(splits)
-
-    # Verifica os seis experimentos antes de iniciar qualquer inferência.
-    required_files = []
-    for experiment in EXPERIMENTS:
-        required_files.extend([
-            MODELS_DIR / f"modelo_{experiment}.keras",
-            METRICS_DIR / f"config_{experiment}.json",
-            HISTORY_DIR / f"historico_{experiment}.json",
-        ])
-    missing_files = [path for path in required_files if not path.is_file()]
-    if missing_files:
-        missing_names = sorted({
-            path.name.split("_")[1].split(".")[0]
-            for path in missing_files
-        })
-        details = "\\n".join(f" - {path.relative_to(OUTPUT_DIR)}" for path in missing_files)
-        raise FileNotFoundError(
-            "A avaliação exige os seis treinamentos completos (E1 a E6). "
-            f"Experimentos com arquivos ausentes: {', '.join(missing_names)}.\\n"
-            f"Arquivos ausentes:\\n{details}\\n"
-            "Execute primeiro: python -m src.train --all --skip-existing"
-        )
-
-    configure_tensorflow()
-
-    # Primeiro calcula apenas F1 macro da validação e escolhe o modelo de referência.
-    validation_scores = _make_validation_scores(dataset_dir, splits, args.batch_size)
-    best_experiment = max(validation_scores, key=validation_scores.get)
-    print(f"\nModelo escolhido pelo maior F1 macro de validação: {best_experiment} ({validation_scores[best_experiment]:.4f})")
-
-    results = {}
-    per_class_rows = []
-    performance_rows = []
-    cost_rows = []
-    best_probabilities = None
-    best_predictions = None
-
-    # Depois da seleção, todos os seis modelos são avaliados no mesmo conjunto de teste.
-    for experiment, cfg in EXPERIMENTS.items():
-        width, height = cfg["width"], cfg["height"]
-        config = load_json(METRICS_DIR / f"config_{experiment}.json")
-        inference_batch_size = args.batch_size or int(config["batch_size_used"])
-        test_ds = build_dataset(
-            dataset_dir, splits["paths"]["test"], splits["labels"]["test"],
-            width, height, inference_batch_size, False,
-        )
-        model = tf.keras.models.load_model(MODELS_DIR / f"modelo_{experiment}.keras")
-        probabilities = _predict(model, test_ds)
-        predictions = probabilities.argmax(axis=1)
-        y_test = np.asarray(splits["labels"]["test"], dtype=int)
-
-        precision, recall, f1, support = precision_recall_fscore_support(
-            y_test, predictions, labels=range(len(CLASSES)), zero_division=0
-        )
-        matrix = confusion_matrix(y_test, predictions, labels=range(len(CLASSES)))
-        metrics = {
-            "experiment": experiment,
-            "validation_macro_f1": validation_scores[experiment],
-            "accuracy_test": float(accuracy_score(y_test, predictions)),
-            "macro_f1_test": float(f1_score(y_test, predictions, average="macro", zero_division=0)),
-            "per_class": {
-                class_name: {
-                    "precision": float(precision[index]),
-                    "recall": float(recall[index]),
-                    "f1": float(f1[index]),
-                    "support": int(support[index]),
-                }
-                for index, class_name in enumerate(CLASSES)
-            },
-            "confusion_matrix": matrix.tolist(),
-            "classification_report": classification_report(
-                y_test, predictions, labels=range(len(CLASSES)),
-                target_names=CLASSES, zero_division=0, output_dict=True,
-            ),
-        }
-        save_json(metrics, METRICS_DIR / f"metricas_{experiment}.json")
-        results[experiment] = metrics
-
-        config = load_json(METRICS_DIR / f"config_{experiment}.json")
-        per_class_rows.extend([
-            [experiment, class_name, precision[i], recall[i], f1[i], support[i]]
-            for i, class_name in enumerate(CLASSES)
-        ])
-        performance_rows.append([
-            experiment, cfg["model"].upper(), f"{width}x{height}",
-            "Sim" if cfg["class_weights"] else "Não",
-            validation_scores[experiment], metrics["accuracy_test"], metrics["macro_f1_test"],
-        ])
-        cost_rows.append([
-            experiment, cfg["model"].upper(), f"{width}x{height}",
-            config["batch_size_used"], config["epochs_executed"],
-            config["total_parameters"], config["trainable_parameters"], config["model_size_mb"],
-            config["training_total_seconds"], config["training_mean_seconds_per_epoch"],
-            config["ram_peak_sampled_mb"], config["gpu_tensorflow_allocator_peak_mb"],
-            config.get("gpu_process_peak_nvidia_smi_mb"),
-            config.get("gpu_utilization_mean_sampled_percent"),
-            config.get("gpu_utilization_max_sampled_percent"),
-            "; ".join(config["hardware"]["gpu_names"]) if config["hardware"]["gpu_names"] else "CPU",
-        ])
-
-        if experiment == best_experiment:
-            best_probabilities = probabilities.copy()
-            best_predictions = predictions.copy()
-
-        del model, probabilities, predictions, test_ds
-        tf.keras.backend.clear_session()
-
-    _write_csv(
-        METRICS_DIR / "tabela5_custo.csv",
-        ["Experimento", "Modelo", "Resolução (LxA)", "Lote", "Épocas", "Parâmetros totais",
-         "Parâmetros treináveis", "Tamanho do modelo (MiB)", "Tempo total (s)", "Tempo médio/época (s)",
-         "Pico RAM amostrado (MiB)", "Pico alocador GPU TensorFlow (MiB)",
-         "Pico VRAM processo nvidia-smi (MiB)", "Utilização média GPU amostrada (%)",
-         "Utilização máxima GPU amostrada (%)", "GPU/CPU"],
-        cost_rows,
-    )
-    _write_csv(
-        METRICS_DIR / "tabela6_desempenho.csv",
-        ["Experimento", "Modelo", "Resolução (LxA)", "Pesos de classe", "F1 macro validação",
-         "Acurácia teste", "F1 macro teste"],
-        performance_rows,
-    )
-    _write_csv(
-        METRICS_DIR / "tabela7_por_classe.csv",
-        ["Experimento", "Classe", "Precisão", "Recall", "F1", "Suporte"],
-        per_class_rows,
-    )
-
-    _create_learning_curves()
-    _create_confusion_figure(results)
-    _create_resolution_figure(results)
-    error_records = _create_error_figure(
-        dataset_dir, splits, best_experiment, best_predictions, best_probabilities
-    )
-    save_json({
-        "selected_by_validation_macro_f1": best_experiment,
-        "validation_macro_f1_by_experiment": validation_scores,
-        "test_errors_shown": error_records,
-        "test_evaluated_after_model_selection": True,
-    }, METRICS_DIR / "modelo_referencia_erros.json")
-    save_json(results, METRICS_DIR / "resultados_completos.json")
-
-    print("\nTabelas geradas:")
-    for filename in ["tabela5_custo.csv", "tabela6_desempenho.csv", "tabela7_por_classe.csv"]:
-        print(f" - outputs/metricas/{filename}")
-    print("Figuras geradas em outputs/figuras (figuras 5 a 8).")
+    splits, dataset_root = load_splits()
+    selected = list(EXPERIMENTS) if args.all else [args.experiment]
+    results = []
+    for exp_id in selected:
+        if (experiment_dir(exp_id) / "best_model.keras").exists():
+            results.append(evaluate_one(exp_id, splits, dataset_root))
+        elif args.all:
+            print(f"{exp_id}: modelo não encontrado; pulando avaliação.")
+        else:
+            raise FileNotFoundError(f"Modelo de {exp_id} não encontrado.")
+    if results:
+        # Atualiza a visão global com todos os modelos que já foram avaliados.
+        existing = []
+        for exp_id in EXPERIMENTS:
+            path = experiment_dir(exp_id) / "metricas_teste.json"
+            if path.exists():
+                existing.append(json.loads(path.read_text(encoding="utf-8")))
+        _make_global_outputs(existing)
+        print(f"\nResultados consolidados em: {FINAL_DIR}")
 
 
 if __name__ == "__main__":

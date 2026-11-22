@@ -1,0 +1,7 @@
+arquivo,classe_real,classe_prevista,confianca_prevista
+C:\Users\Pichau\Desktop\faculdade\unifor IA\Rede neurais\esse\TrashNet_Projeto_Avaliacao_Professor_corrigido_dual\trashnet_mlp_cnn_unifor\outputs\yolo_bonus\dataset_classification\test\cardboard\9bb88f6c16fd5944.jpg,cardboard,paper,0.9999908208847046
+C:\Users\Pichau\Desktop\faculdade\unifor IA\Rede neurais\esse\TrashNet_Projeto_Avaliacao_Professor_corrigido_dual\trashnet_mlp_cnn_unifor\outputs\yolo_bonus\dataset_classification\test\cardboard\90cc4f1fa51b32bb.jpg,cardboard,metal,0.9987574815750122
+C:\Users\Pichau\Desktop\faculdade\unifor IA\Rede neurais\esse\TrashNet_Projeto_Avaliacao_Professor_corrigido_dual\trashnet_mlp_cnn_unifor\outputs\yolo_bonus\dataset_classification\test\trash\6dae3acd2554e66e.jpg,trash,paper,0.99543958902359
+C:\Users\Pichau\Desktop\faculdade\unifor IA\Rede neurais\esse\TrashNet_Projeto_Avaliacao_Professor_corrigido_dual\trashnet_mlp_cnn_unifor\outputs\yolo_bonus\dataset_classification\test\trash\145fb39b422c5640.jpg,trash,cardboard,0.9787383675575256
+C:\Users\Pichau\Desktop\faculdade\unifor IA\Rede neurais\esse\TrashNet_Projeto_Avaliacao_Professor_corrigido_dual\trashnet_mlp_cnn_unifor\outputs\yolo_bonus\dataset_classification\test\glass\b0b252804483f0bc.jpg,glass,metal,0.968666672706604
+C:\Users\Pichau\Desktop\faculdade\unifor IA\Rede neurais\esse\TrashNet_Projeto_Avaliacao_Professor_corrigido_dual\trashnet_mlp_cnn_unifor\outputs\yolo_bonus\dataset_classification\test\plastic\2f032358d0a9c0f9.jpg,plastic,glass,0.9673551917076112

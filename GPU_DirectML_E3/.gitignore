@@ -1,0 +1,7 @@
+.venv_gpu/
+__pycache__/
+*.pyc
+outputs/**
+!outputs/.gitkeep
+backups/
+data/dataset_extraido/

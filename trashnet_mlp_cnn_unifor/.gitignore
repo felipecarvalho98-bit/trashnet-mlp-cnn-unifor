@@ -1,18 +1,30 @@
-# O ZIP oficial é versionado; ignorar somente as imagens extraídas.
-data/dataset-resized/
-
-# Modelos e checkpoints são grandes; baixar backups do Colab e armazenar fora do Git.
-outputs/modelos/*.keras
-outputs/modelos/*.h5
-outputs/checkpoints/**
-!outputs/checkpoints/.gitkeep
-
-# Ambientes, cache e credenciais.
+# Python, editor and test cache
+.venv/
+venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
-.venv/
-venv/
 .ipynb_checkpoints/
+.vscode/settings.json
 .DS_Store
-.env
+Thumbs.db
+*.log
+
+# Local dataset copies
+data/raw/
+data/dataset-resized/
+data/dataset-resized.zip
+data/*.zip
+
+# Model weights/checkpoints are distributed separately when needed
+*.keras
+*.weights.h5
+*.ckpt
+*.pt
+
+# Temporary training outputs; final results are versioned in outputs/resultados_finais/
+outputs/E*/
+outputs/preparacao/
+outputs/_smoke_test/
+outputs/yolo_bonus/dataset_classification/
+outputs/yolo_bonus/runs/

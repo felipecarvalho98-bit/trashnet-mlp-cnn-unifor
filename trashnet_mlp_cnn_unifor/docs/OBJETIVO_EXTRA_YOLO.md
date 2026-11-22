@@ -13,4 +13,8 @@ A extensão utiliza YOLO26n-cls no modo `classify`, atribuindo um rótulo à ima
 
 O YOLO obteve 90,50% de acurácia e 88,72% de F1 macro nas mesmas 379 imagens de teste utilizadas pelo E3. A comparação é complementar: o YOLO utilizou pesos pré-treinados e transformações próprias do Ultralytics, enquanto E3 começou com pesos aleatórios.
 
-O histórico original preservado contém 28 épocas, mas não registra a acurácia de treino por época. O valor de 99,55% é uma avaliação posterior do checkpoint no conjunto de treino, não uma curva histórica. O script adicional incluído no pacote final registra essa informação em uma nova execução, sem alterar o backup original.
+O histórico original preservado contém 28 épocas, mas não registra a acurácia de treino por época. O valor de 99,55% é uma avaliação posterior do checkpoint no conjunto de treino, não uma curva histórica. `src/train_yolo_bonus_curva.py` registra essa informação em uma nova execução, sem alterar o backup original.
+
+## Arquivos
+
+`src/train_yolo_bonus.py` contém o treinamento e a avaliação; `src/evaluate_yolo_checkpoint_recuperacao.py` recupera métricas a partir do checkpoint; `outputs/yolo_bonus/` reúne os resultados disponíveis.

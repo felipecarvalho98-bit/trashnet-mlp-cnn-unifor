@@ -1,0 +1,37 @@
+As pastas train/val/test jÃ¡ estÃ£o completas; serÃ£o reutilizadas.
+Checkpoint preservado: C:\Users\Pichau\Desktop\faculdade\unifor IA\Rede neurais\esse\TrashNet_Projeto_Avaliacao_Professor_corrigido_dual\trashnet_mlp_cnn_unifor\outputs\yolo_bonus\runs\yolo26n_cls\weights\best.pt
+Dataset original: C:\Users\Pichau\Desktop\faculdade\unifor IA\Rede neurais\esse\TrashNet_Projeto_Avaliacao_Professor_corrigido_dual\trashnet_mlp_cnn_unifor\data\dataset-resized\dataset-resized
+Classes do checkpoint: ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
+Dispositivo de avaliaÃ§Ã£o: cpu
+A avaliaÃ§Ã£o pode levar alguns minutos em CPU; nenhum treinamento serÃ¡ iniciado.
+Avaliando partiÃ§Ã£o train ...
+  cardboard: 282 imagens
+  glass: 351 imagens
+  metal: 286 imagens
+  paper: 416 imagens
+  plastic: 336 imagens
+  trash: 95 imagens
+  Total previsto em train: 1766 imagens
+{'accuracy': 0.9954699886749717, 'macro_precision': 0.9964915035216669, 'macro_recall': 0.9942200149297014, 'macro_f1': 0.9953345432338381, 'weighted_f1': 0.9954685571090469, 'total_images': 1766}
+Avaliando partiÃ§Ã£o val ...
+  cardboard: 60 imagens
+  glass: 75 imagens
+  metal: 62 imagens
+  paper: 89 imagens
+  plastic: 72 imagens
+  trash: 21 imagens
+  Total previsto em val: 379 imagens
+{'accuracy': 0.941952506596306, 'macro_precision': 0.9518490498962048, 'macro_recall': 0.9073746526519271, 'macro_f1': 0.9236684229613675, 'weighted_f1': 0.9404312712012921, 'total_images': 379}
+Avaliando partiÃ§Ã£o test ...
+  cardboard: 61 imagens
+  glass: 75 imagens
+  metal: 61 imagens
+  paper: 89 imagens
+  plastic: 72 imagens
+  trash: 21 imagens
+  Total previsto em test: 379 imagens
+{'accuracy': 0.9050131926121372, 'macro_precision': 0.9036750070597037, 'macro_recall': 0.8762564553870503, 'macro_f1': 0.8871868819454835, 'weighted_f1': 0.9043148526154499, 'total_images': 379}
+
+AvaliaÃ§Ã£o concluÃ­da. Nenhum novo treinamento foi realizado.
+Resultados: C:\Users\Pichau\Desktop\faculdade\unifor IA\Rede neurais\esse\TrashNet_Projeto_Avaliacao_Professor_corrigido_dual\trashnet_mlp_cnn_unifor\outputs\yolo_bonus
+Resumo: C:\Users\Pichau\Desktop\faculdade\unifor IA\Rede neurais\esse\TrashNet_Projeto_Avaliacao_Professor_corrigido_dual\trashnet_mlp_cnn_unifor\outputs\yolo_bonus\resumo_yolo.json
